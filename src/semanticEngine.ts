@@ -5,7 +5,7 @@
 // If you're using esModuleInterop, you can do:
 //   import Enumerable from "linq";
 // Otherwise, this style works well in TS with CommonJS:
-import Enumerable = require("linq");
+import Enumerable from "linq";
 
 /**
  * Basic row type for facts/dimensions.
@@ -459,8 +459,8 @@ export function runQuery(
         db,
         factTables,
         metricRegistry,
-        transforms,
         rowContext,
+        transforms,
         cache
       );
       const def = metricRegistry[m];
@@ -752,7 +752,7 @@ buildDemoMetrics();
  * - call runQuery() from your UI / API layer
  */
 
-if (require.main === module) {
+if (typeof require !== "undefined" && typeof module !== "undefined" && require.main === module) {
   const metricBundle = [
     "totalSalesAmount",
     "totalSalesQuantity",
