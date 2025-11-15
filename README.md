@@ -394,3 +394,82 @@ It offers:
 
 This design is intentionally modular and extensible, forming the basis of a future semantic metrics platform.
 
+
+2. Documentation-style examples
+
+You can reuse these in a README or doc site.
+
+2.1 Defining a simple factMeasure
+
+demoMetrics.totalSalesAmount = {
+  kind: "factMeasure",
+  name: "totalSalesAmount",
+  description: "Sum of sales amount over the current context.",
+  factTable: "sales",
+  factColumn: "amount",
+  format: "currency",    // uses fact column’s defaultAgg = sum
+};
+
+2.2 Defining an expression metric
+
+demoMetrics.pricePerUnit = {
+  kind: "expression",
+  name: "pricePerUnit",
+  description: "Sales amount / quantity over the current context.",
+  factTable: "sales",
+  format: "currency",
+  expression: (q) => {
+    const amount = q.sum((r: Row) => Number(r.amount ?? 0));
+    const qty = q.sum((r: Row) => Number(r.quantity ?? 0));
+    return qty ? amount / qty : null;
+  },
+};
+
+2.3 Defining a derived metric
+
+demoMetrics.salesVsBudgetPct = {
+  kind: "derived",
+  name: "salesVsBudgetPct",
+  description: "Total sales / total budget.",
+  dependencies: ["totalSalesAmount", "totalBudget"],
+  format: "percent",
+  evalFromDeps: ({ totalSalesAmount, totalBudget }) => {
+    const s = totalSalesAmount ?? 0;
+    const b = totalBudget ?? 0;
+    if (!b) return null;
+    return (s / b) * 100;
+  },
+};
+
+2.4 Defining a context-transform time-int metric
+
+addContextTransformMetric(demoMetrics, {
+  name: "salesAmountYTD",
+  baseMeasure: "totalSalesAmount",
+  transform: "ytd",
+  description: "YTD of total sales amount.",
+  format: "currency",
+});
+
+ytd is defined in demoTransforms and can be reused for any metric.
+
+2.5 Running a query
+
+const rows = runQuery(
+  demoDb,
+  demoFactTables,
+  demoMetrics,
+  demoTransforms,
+  demoDimensionConfig,
+  {
+    rows: ["regionId", "productId"],
+    filters: { year: 2025, month: 2 },
+    metrics: ["totalSalesAmount", "salesAmountYTD", "totalBudget"],
+    factForRows: "sales",
+  }
+);
+
+console.table(rows);
+
+
+
