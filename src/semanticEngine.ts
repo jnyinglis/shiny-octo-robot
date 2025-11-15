@@ -1,11 +1,74 @@
 // semanticEngine.ts
 // POC semantic metrics engine with factMeasure, expression, derived, contextTransform
 //
-// npm install linq
-// If you're using esModuleInterop, you can do:
-//   import Enumerable from "linq";
-// Otherwise, this style works well in TS with CommonJS:
-import Enumerable from "linq";
+// The original version of this file used the `linq` package for fluent,
+// chainable array helpers. Shipping that dependency caused the GH Pages build
+// to fail because the bundler could not resolve modules outside the Vite app
+// root. To keep the ergonomics without the dependency, we ship a tiny
+// RowSequence helper below that implements just the operators we need.
+
+export class RowSequence {
+  private readonly rows: Row[];
+
+  private constructor(rows: Row[]) {
+    this.rows = rows;
+  }
+
+  static from(rows: Row[]): RowSequence {
+    return new RowSequence([...rows]);
+  }
+
+  where(predicate: (row: Row) => boolean): RowSequence {
+    return new RowSequence(this.rows.filter(predicate));
+  }
+
+  sum(selector: (row: Row) => number): number {
+    return this.rows.reduce((total, row) => {
+      const value = Number(selector(row));
+      if (Number.isNaN(value)) return total;
+      return total + value;
+    }, 0);
+  }
+
+  average(selector: (row: Row) => number): number | null {
+    if (this.rows.length === 0) return null;
+    return this.sum(selector) / this.rows.length;
+  }
+
+  count(): number {
+    return this.rows.length;
+  }
+
+  groupBy<TKey extends string, TValue>(
+    keySelector: (row: Row) => TKey,
+    valueSelector: (row: Row) => TValue
+  ) {
+    const groups = new Map<TKey, TValue[]>();
+    this.rows.forEach((row) => {
+      const key = keySelector(row);
+      const existing = groups.get(key);
+      const value = valueSelector(row);
+      if (existing) {
+        existing.push(value);
+      } else {
+        groups.set(key, [value]);
+      }
+    });
+
+    const groupArray = Array.from(groups.entries()).map(([key, values]) => ({
+      key: () => key,
+      toArray: () => [...values],
+    }));
+
+    return {
+      toArray: () => groupArray,
+    };
+  }
+
+  toArray(): Row[] {
+    return [...this.rows];
+  }
+}
 
 /**
  * Basic row type for facts/dimensions.
@@ -118,7 +181,7 @@ export interface ExpressionMetric extends MetricBase {
    * Custom aggregator: receives a LINQ sequence over filtered fact rows.
    * Returns a numeric value or null.
    */
-  expression: (q: any, db: InMemoryDb, context: FilterContext) => number | null;
+  expression: (q: RowSequence, db: InMemoryDb, context: FilterContext) => number | null;
 }
 
 /**
@@ -223,8 +286,8 @@ export function applyContextToFact(
   rows: Row[],
   context: FilterContext,
   grain: string[]
-): any {
-  let q = Enumerable.from(rows);
+): RowSequence {
+  let q = RowSequence.from(rows);
 
   Object.entries(context || {}).forEach(([key, filter]) => {
     if (filter === undefined || filter === null) return;

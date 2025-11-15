@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
-    "linq": "^4.0.3",
     "monaco-editor": "^0.54.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
