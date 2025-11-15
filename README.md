@@ -1,6 +1,38 @@
 # shiny-octo-robot
 Semantic Metrics Engine — Proof-of-Concept Design
 
+## Interactive playground
+
+The repo now includes a browser-deliverable playground (`/web`) that bundles the in-memory demo DB
+from `src/semanticEngine.ts` into a React + Vite single-page app. The UI ships with:
+
+- A Monaco-based metric editor where you can override or add new `factMeasure` definitions. Paste a
+  JSON array, click **Apply overrides**, and the definitions immediately replace the defaults that
+  ship from the README examples. The editor persists to `localStorage` so you can refresh without
+  losing custom metrics.
+- A visual runner that wraps the existing `runQuery` helper. Pick row dimensions (respecting the
+  grain of your fact table), metrics, filters, and run the query against the in-memory dataset.
+- A result panel with an interactive table, a selectable bar/line chart fed by the same dataset, and
+  expandable blocks that show the request payload plus the raw response rows. This makes it easy to
+  reason about how metric grain, filters, and formatting behave.
+
+### Running locally
+
+```
+npm install --prefix web
+npm run dev --prefix web
+```
+
+The site lives at http://localhost:5173/shiny-octo-robot/ when served through Vite. For a production
+build run `npm run build` (or `npm run build --prefix web`) and open the contents of `web/dist/`.
+
+### Deploying to GitHub Pages
+
+- `npm run deploy:docs` builds the SPA and copies the static assets into `docs/` for manual GitHub
+  Pages hosting if desired.
+- `.github/workflows/pages.yml` installs dependencies, runs lint/build tasks, and publishes the `web`
+  build to the repository’s GitHub Pages environment on every push to `main`.
+
 Overview
 
 This document describes the design and implementation of a semantic metrics engine — a lightweight library inspired by:

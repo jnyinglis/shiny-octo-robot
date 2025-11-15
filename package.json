@@ -1,0 +1,13 @@
+{
+  "name": "shiny-octo-robot",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix web",
+    "build": "npm run build --prefix web",
+    "lint": "npm run lint --prefix web",
+    "deploy:docs": "npm run build --prefix web && rm -rf docs && cp -R web/dist docs"
+  },
+  "dependencies": {
+    "linq": "^4.0.3"
+  }
+}
